@@ -12,7 +12,7 @@
   "name": "שירי שבת – חלק א׳",
   "category": "כללי",
   "file": "audio/shabbat-a.mp3",
-  "seconds": 2355.6,
+  "seconds": 2355.7,
   "bytes": 28267920
  },
  {
@@ -20,8 +20,24 @@
   "name": "שירי שבת – חלק ב׳",
   "category": "כללי",
   "file": "audio/shabbat-b.mp3",
-  "seconds": 2404.6,
+  "seconds": 2404.7,
   "bytes": 28855872
+ },
+ {
+  "id": "kids-a",
+  "name": "שירי ילדים – חלק א׳",
+  "category": "כללי",
+  "file": "audio/kids-a.mp3",
+  "seconds": 2030.2,
+  "bytes": 24362640
+ },
+ {
+  "id": "kids-b",
+  "name": "שירי ילדים – חלק ב׳",
+  "category": "כללי",
+  "file": "audio/kids-b.mp3",
+  "seconds": 1653.4,
+  "bytes": 19841760
  },
  {
   "id": "rosh",
