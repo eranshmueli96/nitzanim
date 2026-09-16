@@ -118,10 +118,15 @@ ol.tracks{list-style:none; margin:0; padding:12px 14px 30px; display:flex; flex-
 .art svg{width:64px; height:64px; fill:#fff; opacity:.92}
 .p-name{margin:0; font-size:27px; font-weight:700; line-height:1.2; letter-spacing:-.01em}
 .p-state{margin:2px 0 0; font-size:14px; color:var(--muted); font-variant-numeric:tabular-nums}
+.p-next{margin:14px 0 0; font-size:13.5px; color:var(--muted)}
+.p-next b{color:var(--ink); font-weight:700}
 .panel{padding:16px 22px calc(26px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:6px}
 input[type=range]{width:100%; margin:0; accent-color:var(--brand); height:24px; background:transparent; cursor:pointer}
 .times{display:flex; justify-content:space-between; font-size:12.5px; color:var(--muted); font-variant-numeric:tabular-nums; margin-top:-6px}
-.pcontrols{display:flex; align-items:center; justify-content:center; gap:16px; padding-top:6px}
+.pcontrols{display:flex; align-items:center; justify-content:center; gap:10px; padding-top:6px}
+.pcontrols .ctl{width:48px; height:48px; color:var(--ink)}
+.pcontrols .ctl svg{width:24px; height:24px; fill:currentColor}
+.pcontrols button:disabled{opacity:.3; cursor:default}
 .pcontrols button{
   font:inherit; border:none; background:transparent; color:var(--ink);
   cursor:pointer; display:grid; place-items:center; border-radius:50%;
@@ -157,7 +162,7 @@ button:focus-visible, .track:focus-visible, input:focus-visible{
 
   <ol class="tracks" id="tracks"></ol>
   <p class="empty" id="empty" hidden>לא נמצא שיר בשם הזה</p>
-  <p class="credit">לחצו על שיר כדי להשמיע · אפשר לנעול את המסך וההשמעה ממשיכה</p>
+  <p class="credit">לחצו על שיר כדי להשמיע · השירים ממשיכים אחד אחרי השני · אפשר לנעול את המסך</p>
 </div>
 
 <div id="playerView" hidden>
@@ -172,15 +177,18 @@ button:focus-visible, .track:focus-visible, input:focus-visible{
     <div class="art"><svg viewBox="0 0 24 24"><path d="M12 3v10.6A4 4 0 1014 17V7h4V3h-6z"/></svg></div>
     <h2 class="p-name" id="pName"></h2>
     <p class="p-state" id="pState">מוכן להשמעה</p>
+    <p class="p-next" id="pNext" hidden></p>
   </div>
 
   <div class="panel">
     <input type="range" id="seek" min="0" max="1000" value="0" step="1" aria-label="מיקום בשיר">
     <div class="times"><span id="tCur">0:00</span><span id="tDur">0:00</span></div>
     <div class="pcontrols">
+      <button class="ctl" id="prevSong" aria-label="השיר הקודם"><svg viewBox="0 0 24 24"><path d="M6 6h2.5v12H6zM20 6v12l-9-6z"/></svg></button>
       <button class="skip" id="back15" aria-label="אחורה 15 שניות">15 ↺</button>
       <button class="big" id="play" aria-label="נגן"><svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg></button>
       <button class="skip" id="fwd15" aria-label="קדימה 15 שניות">↻ 15</button>
+      <button class="ctl" id="nextSong" aria-label="השיר הבא"><svg viewBox="0 0 24 24"><path d="M15.5 6H18v12h-2.5zM4 6l9 6-9 6z"/></svg></button>
     </div>
   </div>
 </div>
@@ -236,7 +244,7 @@ function renderList() {
       '<span class="t-main"><span class="t-name"></span>' +
       '<span class="t-sub">' + fmt(s.seconds) + '</span></span>';
     li.querySelector('.t-name').textContent = s.name;
-    const go = () => openSong(s.id, true);
+    const go = () => openSong(s.id, 'push');
     li.addEventListener('click', go);
     li.addEventListener('keydown', e => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
@@ -246,7 +254,19 @@ function renderList() {
 }
 
 /* ---------- screens ---------- */
-function openSong(id, push) {
+const idxOf = id => SONGS.findIndex(s => s.id === id);
+const neighbour = d => {
+  const i = idxOf(current && current.id);
+  return i < 0 ? null : (SONGS[i + d] || null);
+};
+/* warm the first chunk of the next file so the handover is near-instant */
+function prefetchNext() {
+  const n = neighbour(1);
+  if (!n) return;
+  fetch(n.file, { headers: { Range: 'bytes=0-262143' } }).catch(() => {});
+}
+
+function openSong(id, mode) {
   const song = SONGS.find(s => s.id === id);
   if (!song) return;
   if (!current || current.id !== id) {
@@ -263,8 +283,11 @@ function openSong(id, push) {
   window.scrollTo(0, 0);
   tick();
   paint();
-  if (push) history.pushState({ song: id }, '', '#' + encodeURIComponent(id));
+  const entry = [{ song: id }, '', '#' + encodeURIComponent(id)];
+  if (mode === 'push') history.pushState(...entry);
+  else if (mode === 'replace') history.replaceState(...entry);
   audio.play().catch(() => {});   /* the tap that got us here counts as the gesture */
+  prefetchNext();
 }
 
 function showList(push) {
@@ -276,14 +299,14 @@ function showList(push) {
 
 function openFromHash() {
   const id = decodeURIComponent((location.hash || '').replace(/^#/, ''));
-  if (id && SONGS.some(s => s.id === id)) openSong(id, false);
+  if (id && SONGS.some(s => s.id === id)) openSong(id, 'none');
   else showList(false);
 }
 
 $('back').addEventListener('click', () => history.back());
 window.addEventListener('popstate', e => {
   const id = e.state && e.state.song;
-  if (id) openSong(id, false); else showList(false);
+  if (id) openSong(id, 'none'); else showList(false);
 });
 
 /* ---------- playback ---------- */
@@ -291,6 +314,12 @@ function paint() {
   const pauseIcon = '<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>';
   const playIcon = '<path d="M8 5.5v13l11-6.5z"/>';
   $('playIcon').innerHTML = playing ? pauseIcon : playIcon;
+  const next = neighbour(1), prev = neighbour(-1);
+  $('pNext').hidden = !next;
+  if (next) $('pNext').innerHTML = 'הבא בתור: <b></b>';
+  if (next) $('pNext').querySelector('b').textContent = next.name;
+  $('nextSong').disabled = !next;
+  $('prevSong').disabled = !prev;
   $('play').setAttribute('aria-label', playing ? 'השהה' : 'נגן');
   $('pState').textContent = playing ? 'מתנגן' : 'מושהה';
   if (current && 'mediaSession' in navigator) {
@@ -315,11 +344,15 @@ audio.addEventListener('timeupdate', () => {
 });
 audio.addEventListener('ended', () => {
   if (current) save(current.id, 0);
+  const next = neighbour(1);
+  if (next) { openSong(next.id, 'replace'); return; }
   playing = false; paint();
 });
 audio.addEventListener('error', () => { $('pState').textContent = 'שגיאה בטעינה'; });
 
 $('play').addEventListener('click', () => playing ? audio.pause() : audio.play().catch(() => {}));
+$('nextSong').addEventListener('click', () => { const n = neighbour(1); if (n) openSong(n.id, 'replace'); });
+$('prevSong').addEventListener('click', () => { const p = neighbour(-1); if (p) openSong(p.id, 'replace'); });
 $('back15').addEventListener('click', () => { audio.currentTime = Math.max(0, audio.currentTime - 15); });
 $('fwd15').addEventListener('click', () => {
   audio.currentTime = Math.min((audio.duration || 0) - 1, audio.currentTime + 15);
@@ -339,6 +372,8 @@ if ('mediaSession' in navigator) {
   try {
     navigator.mediaSession.setActionHandler('play', () => audio.play().catch(() => {}));
     navigator.mediaSession.setActionHandler('pause', () => audio.pause());
+    navigator.mediaSession.setActionHandler('nexttrack', () => { const n = neighbour(1); if (n) openSong(n.id, 'replace'); });
+    navigator.mediaSession.setActionHandler('previoustrack', () => { const p = neighbour(-1); if (p) openSong(p.id, 'replace'); });
     navigator.mediaSession.setActionHandler('seekto', d => {
       if (d.seekTime != null) audio.currentTime = d.seekTime;
     });
