@@ -85,7 +85,9 @@ ol.tracks{list-style:none; margin:0; padding:12px 14px 30px; display:flex; flex-
   flex:none; width:46px; height:46px; border-radius:50%;
   background:var(--brand); color:#fff; display:grid; place-items:center;
 }
+.track.playing{border-color:var(--green)}
 .track.playing .go{background:var(--green)}
+.track.playing .t-sub{color:var(--green); font-weight:700}
 .track .go svg{width:20px; height:20px; fill:currentColor}
 .t-main{min-width:0; flex:1}
 .t-name{display:block; font-weight:700; font-size:16.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
@@ -118,23 +120,29 @@ ol.tracks{list-style:none; margin:0; padding:12px 14px 30px; display:flex; flex-
 .art svg{width:64px; height:64px; fill:#fff; opacity:.92}
 .p-name{margin:0; font-size:27px; font-weight:700; line-height:1.2; letter-spacing:-.01em}
 .p-state{margin:2px 0 0; font-size:14px; color:var(--muted); font-variant-numeric:tabular-nums}
-.p-next{margin:14px 0 0; font-size:13.5px; color:var(--muted)}
+.p-pos{margin:10px 0 0; font-size:12px; font-weight:700; letter-spacing:.06em; color:var(--muted)}
+.p-next{margin:6px 0 0; font-size:13.5px; color:var(--muted)}
 .p-next b{color:var(--ink); font-weight:700}
 .panel{padding:16px 22px calc(26px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:6px}
 /* a time axis reads left-to-right even in an RTL interface - same as
    WhatsApp voice notes, YouTube and Spotify in Hebrew */
 input[type=range]{direction:ltr; width:100%; margin:0; accent-color:var(--brand); height:24px; background:transparent; cursor:pointer}
 .times{direction:ltr; display:flex; justify-content:space-between; font-size:12.5px; color:var(--muted); font-variant-numeric:tabular-nums; margin-top:-6px}
-.pcontrols{display:flex; align-items:center; justify-content:center; gap:10px; padding-top:6px}
-.pcontrols .ctl{width:48px; height:48px; color:var(--ink)}
-.pcontrols .ctl svg{width:24px; height:24px; fill:currentColor}
-.pcontrols button:disabled{opacity:.3; cursor:default}
+/* the row follows the timeline above it: previous on the left, next on the right */
+.pcontrols{direction:ltr; display:flex; align-items:center; justify-content:center; gap:12px; padding-top:10px}
 .pcontrols button{
   font:inherit; border:none; background:transparent; color:var(--ink);
-  cursor:pointer; display:grid; place-items:center; border-radius:50%;
-  -webkit-tap-highlight-color:transparent;
+  cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:3px; border-radius:50%; -webkit-tap-highlight-color:transparent;
 }
-.skip{width:54px; height:54px; font-size:13px; font-weight:700; color:var(--muted)}
+.pcontrols .ctl, .pcontrols .skip{
+  width:60px; height:60px; background:var(--surface);
+  border:1px solid var(--line); color:var(--ink);
+}
+.pcontrols .ctl svg, .pcontrols .skip svg{width:22px; height:22px; fill:currentColor}
+.pcontrols .lbl{font-size:10px; font-weight:700; color:var(--muted); line-height:1; white-space:nowrap}
+.pcontrols .ctl:not(:disabled):active, .pcontrols .skip:active{background:var(--surface-2)}
+.pcontrols button:disabled{opacity:.3; cursor:default}
 .pcontrols .big{
   width:76px; height:76px; background:var(--brand); color:#fff; flex:none;
   box-shadow:var(--shadow);
@@ -179,6 +187,7 @@ button:focus-visible, .track:focus-visible, input:focus-visible{
     <div class="art"><svg viewBox="0 0 24 24"><path d="M12 3v10.6A4 4 0 1014 17V7h4V3h-6z"/></svg></div>
     <h2 class="p-name" id="pName"></h2>
     <p class="p-state" id="pState">מוכן להשמעה</p>
+    <p class="p-pos" id="pPos"></p>
     <p class="p-next" id="pNext" hidden></p>
   </div>
 
@@ -186,11 +195,21 @@ button:focus-visible, .track:focus-visible, input:focus-visible{
     <input type="range" id="seek" min="0" max="1000" value="0" step="1" aria-label="מיקום בשיר">
     <div class="times"><span id="tCur">0:00</span><span id="tDur">0:00</span></div>
     <div class="pcontrols">
-      <button class="ctl" id="prevSong" aria-label="השיר הקודם"><svg viewBox="0 0 24 24"><path d="M6 6h2.5v12H6zM20 6v12l-9-6z"/></svg></button>
-      <button class="skip" id="back15" aria-label="אחורה 15 שניות">15 ↺</button>
+      <button class="ctl" id="prevSong" aria-label="לשיר הקודם">
+        <svg viewBox="0 0 24 24"><path d="M6 6h2.5v12H6zM20 6v12l-9-6z"/></svg><span class="lbl">שיר קודם</span>
+      </button>
+      <button class="skip" id="back15" aria-label="אחורה 15 שניות">
+        <svg viewBox="0 0 24 24"><path d="M12 5V1.5L7.5 6 12 10.5V7a5.5 5.5 0 11-5.5 5.5H4.5A7.5 7.5 0 1012 5z"/></svg>
+        <span class="lbl">15 שנ׳</span>
+      </button>
       <button class="big" id="play" aria-label="נגן"><svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg></button>
-      <button class="skip" id="fwd15" aria-label="קדימה 15 שניות">↻ 15</button>
-      <button class="ctl" id="nextSong" aria-label="השיר הבא"><svg viewBox="0 0 24 24"><path d="M15.5 6H18v12h-2.5zM4 6l9 6-9 6z"/></svg></button>
+      <button class="skip" id="fwd15" aria-label="קדימה 15 שניות">
+        <svg viewBox="0 0 24 24"><path d="M12 5V1.5L16.5 6 12 10.5V7a5.5 5.5 0 105.5 5.5h2A7.5 7.5 0 1112 5z"/></svg>
+        <span class="lbl">15 שנ׳</span>
+      </button>
+      <button class="ctl" id="nextSong" aria-label="לשיר הבא">
+        <svg viewBox="0 0 24 24"><path d="M15.5 6H18v12h-2.5zM4 6l9 6-9 6z"/></svg><span class="lbl">שיר הבא</span>
+      </button>
     </div>
   </div>
 </div>
@@ -244,7 +263,9 @@ function renderList() {
     li.innerHTML =
       '<span class="go"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg></span>' +
       '<span class="t-main"><span class="t-name"></span>' +
-      '<span class="t-sub">' + fmt(s.seconds) + '</span></span>';
+      '<span class="t-sub"></span></span>';
+    const nowPlaying = current && current.id === s.id && playing;
+    li.querySelector('.t-sub').textContent = nowPlaying ? 'מתנגן עכשיו' : fmt(s.seconds);
     li.querySelector('.t-name').textContent = s.name;
     const go = () => openSong(s.id, 'push');
     li.addEventListener('click', go);
@@ -301,8 +322,14 @@ function showList(push) {
 
 function openFromHash() {
   const id = decodeURIComponent((location.hash || '').replace(/^#/, ''));
-  if (id && SONGS.some(s => s.id === id)) openSong(id, 'none');
-  else showList(false);
+  if (id && SONGS.some(s => s.id === id)) {
+    /* someone opened a single-song link: put the list underneath it in history,
+       so Back shows the list instead of leaving the site */
+    history.replaceState({ song: null }, '', location.pathname + location.search);
+    openSong(id, 'push');
+  } else {
+    showList(false);
+  }
 }
 
 $('back').addEventListener('click', () => history.back());
@@ -317,6 +344,7 @@ function paint() {
   const playIcon = '<path d="M8 5.5v13l11-6.5z"/>';
   $('playIcon').innerHTML = playing ? pauseIcon : playIcon;
   const next = neighbour(1), prev = neighbour(-1);
+  $('pPos').textContent = 'שיר ' + (idxOf(current && current.id) + 1) + ' מתוך ' + SONGS.length;
   $('pNext').hidden = !next;
   if (next) $('pNext').innerHTML = 'הבא בתור: <b></b>';
   if (next) $('pNext').querySelector('b').textContent = next.name;
