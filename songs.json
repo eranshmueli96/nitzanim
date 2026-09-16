@@ -8,6 +8,22 @@
   "bytes": 13650768
  },
  {
+  "id": "shabbat-a",
+  "name": "שירי שבת – חלק א׳",
+  "category": "כללי",
+  "file": "audio/shabbat-a.mp3",
+  "seconds": 2355.6,
+  "bytes": 28267920
+ },
+ {
+  "id": "shabbat-b",
+  "name": "שירי שבת – חלק ב׳",
+  "category": "כללי",
+  "file": "audio/shabbat-b.mp3",
+  "seconds": 2404.6,
+  "bytes": 28855872
+ },
+ {
   "id": "rosh",
   "name": "ראש השנה",
   "category": "חגים",
@@ -68,7 +84,7 @@
   "name": "אביב ופסח",
   "category": "חגים",
   "file": "audio/spring.mp3",
-  "seconds": 2258.7,
+  "seconds": 2258.8,
   "bytes": 27105408
  },
  {
@@ -76,7 +92,7 @@
   "name": "יום העצמאות ול״ג בעומר – חלק א׳",
   "category": "חגים",
   "file": "audio/independence-a.mp3",
-  "seconds": 3659.3,
+  "seconds": 3659.4,
   "bytes": 43912368
  },
  {
@@ -92,7 +108,7 @@
   "name": "שבועות",
   "category": "חגים",
   "file": "audio/shavuot.mp3",
-  "seconds": 1461.2,
+  "seconds": 1461.3,
   "bytes": 17535312
  },
  {
