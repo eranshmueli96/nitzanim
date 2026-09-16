@@ -1,0 +1,42 @@
+[
+ {
+  "id": "morning",
+  "name": "שירי בוקר",
+  "category": "כללי",
+  "file": "audio/morning.mp3",
+  "seconds": 1137.5,
+  "bytes": 13650768
+ },
+ {
+  "id": "rosh",
+  "name": "ראש השנה",
+  "category": "חגים",
+  "file": "audio/rosh.mp3",
+  "seconds": 3188.3,
+  "bytes": 38260080
+ },
+ {
+  "id": "winter",
+  "name": "חורף",
+  "category": "עונות",
+  "file": "audio/winter.mp3",
+  "seconds": 1157.7,
+  "bytes": 13893552
+ },
+ {
+  "id": "sukkot",
+  "name": "סוכות",
+  "category": "חגים",
+  "file": "audio/sukkot.mp3",
+  "seconds": 1670.6,
+  "bytes": 20047824
+ },
+ {
+  "id": "hanukkah",
+  "name": "חנוכה",
+  "category": "חגים",
+  "file": "audio/hanukkah.mp3",
+  "seconds": 1884.0,
+  "bytes": 22609152
+ }
+]
