@@ -62,7 +62,7 @@ body{
 .hero h1{font-weight:700; font-size:30px; line-height:1.2; margin:0; letter-spacing:-.01em}
 .hero .meta{margin:8px 0 0; font-size:14px; color:var(--on-brand-dim); font-variant-numeric:tabular-nums}
 
-.filters{padding:18px 16px 4px; display:flex; flex-direction:column; gap:12px}
+.filters{padding:18px 16px 4px}
 .search{position:relative}
 .search input{
   width:100%; font:inherit; color:var(--ink); background:var(--surface);
@@ -73,15 +73,6 @@ body{
   position:absolute; inset-inline-end:14px; inset-block-start:50%; transform:translateY(-50%);
   width:18px; height:18px; fill:var(--muted); pointer-events:none;
 }
-.chips{display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none}
-.chips::-webkit-scrollbar{display:none}
-.chip{
-  flex:none; font:inherit; font-size:14px; font-weight:600; cursor:pointer;
-  background:var(--surface); color:var(--muted);
-  border:1px solid var(--line); border-radius:999px; padding:7px 14px;
-}
-.chip[aria-pressed="true"]{background:var(--brand); color:#fff; border-color:var(--brand)}
-
 ol.tracks{list-style:none; margin:0; padding:12px 14px 30px; display:flex; flex-direction:column; gap:10px}
 .track{
   display:flex; align-items:center; gap:14px;
@@ -99,11 +90,6 @@ ol.tracks{list-style:none; margin:0; padding:12px 14px 30px; display:flex; flex-
 .t-main{min-width:0; flex:1}
 .t-name{display:block; font-weight:700; font-size:16.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .t-sub{display:block; font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums; margin-top:1px}
-.badge{
-  flex:none; font-size:12px; font-weight:700; color:var(--brand-3);
-  background:var(--surface-2); border:1px solid var(--line);
-  border-radius:999px; padding:3px 9px;
-}
 .empty{text-align:center; color:var(--muted); padding:40px 20px}
 .credit{padding:6px 20px 30px; text-align:center; color:var(--muted); font-size:13px}
 
@@ -130,7 +116,6 @@ ol.tracks{list-style:none; margin:0; padding:12px 14px 30px; display:flex; flex-
   display:grid; place-items:center; box-shadow:var(--shadow);
 }
 .art svg{width:64px; height:64px; fill:#fff; opacity:.92}
-.p-cat{margin:0; font-size:12px; font-weight:700; letter-spacing:.14em; color:var(--muted)}
 .p-name{margin:0; font-size:27px; font-weight:700; line-height:1.2; letter-spacing:-.01em}
 .p-state{margin:2px 0 0; font-size:14px; color:var(--muted); font-variant-numeric:tabular-nums}
 .panel{padding:16px 22px calc(26px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:6px}
@@ -148,7 +133,7 @@ input[type=range]{width:100%; margin:0; accent-color:var(--brand); height:24px; 
   box-shadow:var(--shadow);
 }
 .pcontrols .big svg{width:32px; height:32px; fill:currentColor}
-button:focus-visible, .track:focus-visible, input:focus-visible, .chip:focus-visible{
+button:focus-visible, .track:focus-visible, input:focus-visible{
   outline:3px solid var(--lime); outline-offset:2px;
 }
 @media (prefers-reduced-motion:reduce){*{transition:none !important}}
@@ -168,7 +153,6 @@ button:focus-visible, .track:focus-visible, input:focus-visible, .chip:focus-vis
       <input type="search" id="q" placeholder="חיפוש שיר" autocomplete="off" aria-label="חיפוש שיר">
       <svg viewBox="0 0 24 24"><path d="M10 4a6 6 0 104.2 10.3l4.3 4.2 1.4-1.4-4.2-4.3A6 6 0 0010 4zm0 2a4 4 0 110 8 4 4 0 010-8z"/></svg>
     </div>
-    <div class="chips" id="chips"></div>
   </div>
 
   <ol class="tracks" id="tracks"></ol>
@@ -186,7 +170,6 @@ button:focus-visible, .track:focus-visible, input:focus-visible, .chip:focus-vis
 
   <div class="stage">
     <div class="art"><svg viewBox="0 0 24 24"><path d="M12 3v10.6A4 4 0 1014 17V7h4V3h-6z"/></svg></div>
-    <p class="p-cat" id="pCat"></p>
     <h2 class="p-name" id="pName"></h2>
     <p class="p-state" id="pState">מוכן להשמעה</p>
   </div>
@@ -208,7 +191,7 @@ button:focus-visible, .track:focus-visible, input:focus-visible, .chip:focus-vis
 const $ = id => document.getElementById(id);
 const audio = $('audio');
 let SONGS = [], current = null, playing = false, seeking = false, lastSave = 0;
-let filterCat = 'הכול', query = '';
+let query = '';
 
 const fmt = s => {
   s = Math.max(0, Math.floor(s || 0));
@@ -230,29 +213,13 @@ async function load() {
   SONGS = await res.json();
   $('heroMeta').textContent =
     SONGS.length + ' שירים · ' + heTime(SONGS.reduce((s, x) => s + x.seconds, 0));
-  buildChips();
   renderList();
   openFromHash();
 }
 
-function buildChips() {
-  const cats = ['הכול', ...[...new Set(SONGS.map(s => s.category))]];
-  $('chips').replaceChildren(...cats.map(c => {
-    const b = document.createElement('button');
-    b.className = 'chip';
-    b.type = 'button';
-    b.textContent = c;
-    b.setAttribute('aria-pressed', String(c === filterCat));
-    b.addEventListener('click', () => { filterCat = c; buildChips(); renderList(); });
-    return b;
-  }));
-}
-
 function visible() {
   const q = query.trim();
-  return SONGS.filter(s =>
-    (filterCat === 'הכול' || s.category === filterCat) &&
-    (!q || s.name.includes(q) || s.category.includes(q)));
+  return SONGS.filter(s => !q || s.name.includes(q));
 }
 
 function renderList() {
@@ -267,10 +234,8 @@ function renderList() {
     li.innerHTML =
       '<span class="go"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg></span>' +
       '<span class="t-main"><span class="t-name"></span>' +
-      '<span class="t-sub">' + fmt(s.seconds) + '</span></span>' +
-      '<span class="badge"></span>';
+      '<span class="t-sub">' + fmt(s.seconds) + '</span></span>';
     li.querySelector('.t-name').textContent = s.name;
-    li.querySelector('.badge').textContent = s.category;
     const go = () => openSong(s.id, true);
     li.addEventListener('click', go);
     li.addEventListener('keydown', e => {
@@ -292,7 +257,6 @@ function openSong(id, push) {
       audio.addEventListener('loadedmetadata', () => { try { audio.currentTime = at; } catch (e) {} }, { once: true });
     }
   }
-  $('pCat').textContent = song.category;
   $('pName').textContent = song.name;
   $('listView').hidden = true;
   $('playerView').hidden = false;
@@ -331,7 +295,7 @@ function paint() {
   $('pState').textContent = playing ? 'מתנגן' : 'מושהה';
   if (current && 'mediaSession' in navigator) {
     navigator.mediaSession.metadata = new MediaMetadata({
-      title: current.name, artist: 'גן ניצנים', album: current.category });
+      title: current.name, artist: 'גן ניצנים' });
     navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
   }
 }
